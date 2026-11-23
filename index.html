@@ -83,6 +83,29 @@
       cursor: pointer;
     }
 
+    .start-screen {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .text-input {
+      width: 100%;
+      box-sizing: border-box;
+      border: 2px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 14px 16px;
+      font: inherit;
+      font-size: 16px;
+      color: var(--text-main);
+      background: #ffffff;
+    }
+
+    .text-input:focus {
+      outline: none;
+      border-color: #4f46e5;
+    }
+
     .app-container {
       width: 100%;
       max-width: 480px;
@@ -344,7 +367,15 @@
   </div>
 
   <main class="app-container">
-    <div id="quiz-screen">
+    <form id="start-screen" class="start-screen">
+      <span class="app-title">⚡ Квиз: Основы ИИ</span>
+      <h1 class="question-text">Представьтесь, чтобы начать</h1>
+      <input id="student-name" class="text-input" type="text" placeholder="Имя и фамилия" autocomplete="name" maxlength="80" required />
+      <input id="student-group" class="text-input" type="text" placeholder="Группа" maxlength="40" required />
+      <button class="primary-btn" type="submit">Начать квиз →</button>
+    </form>
+
+    <div id="quiz-screen" class="hidden">
       <div class="header">
         <div class="top-bar">
           <span class="app-title">⚡ Квиз: Основы ИИ</span>
@@ -593,6 +624,13 @@
 
       resultScore.textContent = `${score} / ${questions.length}`;
 
+      queueResult({
+        name: nameInput.value.trim(),
+        group: groupInput.value.trim(),
+        score: score,
+        percent: Math.round((score / questions.length) * 100) + "%"
+      });
+
       if (score >= 9) {
         resultEmoji.textContent = "🏆";
         resultTitle.textContent = "Блестяще!";
@@ -625,7 +663,70 @@
       renderQuestion();
     });
 
-    renderQuestion();
+    // --- Старт: имя и группа ---
+    const startScreen = document.getElementById("start-screen");
+    const nameInput = document.getElementById("student-name");
+    const groupInput = document.getElementById("student-group");
+
+    try {
+      nameInput.value = localStorage.getItem("studentName") || "";
+      groupInput.value = localStorage.getItem("studentGroup") || "";
+    } catch (e) {}
+
+    startScreen.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (!nameInput.value.trim() || !groupInput.value.trim()) return;
+      try {
+        localStorage.setItem("studentName", nameInput.value.trim());
+        localStorage.setItem("studentGroup", groupInput.value.trim());
+      } catch (e) {}
+      startScreen.classList.add("hidden");
+      quizScreen.classList.remove("hidden");
+      renderQuestion();
+    });
+
+    // --- Отправка результата в Google Таблицу ---
+    const SHEET_URL = "https://script.google.com/macros/s/AKfycbypivO1VYa4hwcTpAxA7UFq121adnfcEWfB82bdgBJnu80zr1ukv1zyLiQUHr-9YHHF/exec";
+
+    // Результаты ждут в очереди, пока не уйдут: квиз работает и без сети
+    function readQueue() {
+      try { return JSON.parse(localStorage.getItem("pendingResults")) || []; } catch (e) { return []; }
+    }
+
+    function writeQueue(queue) {
+      try { localStorage.setItem("pendingResults", JSON.stringify(queue)); } catch (e) {}
+    }
+
+    function queueResult(result) {
+      writeQueue(readQueue().concat(result));
+      flushResults();
+    }
+
+    let flushing = false;
+    async function flushResults() {
+      if (flushing) return;
+      flushing = true;
+      try {
+        let queue = readQueue();
+        while (queue.length) {
+          // Поля и в адресе, и в теле: скрипт прочитает и e.parameter, и e.postData
+          await fetch(SHEET_URL + "?" + new URLSearchParams(queue[0]), {
+            method: "POST",
+            mode: "no-cors",
+            body: JSON.stringify(queue[0])
+          });
+          queue = readQueue().slice(1);
+          writeQueue(queue);
+        }
+      } catch (e) {
+        // нет сети — повторим при следующем запуске или появлении связи
+      } finally {
+        flushing = false;
+      }
+    }
+
+    window.addEventListener("online", flushResults);
+    flushResults();
 
     // --- Логика PWA ---
     if ("serviceWorker" in navigator) {
