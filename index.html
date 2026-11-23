@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Квиз: Основы ИИ</title>
+
+  <!-- PWA мета-теги -->
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+  <meta name="theme-color" content="#4f46e5" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Основы ИИ" />
+
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+      --card-bg: #ffffff;
+      --text-main: #1e1b4b;
+      --text-muted: #64748b;
+      --correct-bg: #dcfce7;
+      --correct-border: #16a34a;
+      --correct-text: #14532d;
+      --wrong-bg: #fee2e2;
+      --wrong-border: #dc2626;
+      --wrong-text: #7f1d1d;
+      --option-bg: #f8fafc;
+      --option-border: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg-gradient);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      color: var(--text-main);
+      gap: 12px;
+    }
+
+    .install-banner {
+      width: 100%;
+      max-width: 480px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(8px);
+      border-radius: 18px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18);
+    }
+
+    .install-text {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .install-btn {
+      flex-shrink: 0;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 14px;
+      background: #4f46e5;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      background: var(--card-bg);
+      border-radius: 28px;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      animation: fadeIn 0.35s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .header {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .app-title {
+      background: linear-gradient(90deg, #4f46e5, #db2777);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-weight: 800;
+      font-size: 16px;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #4f46e5, #ec4899);
+      border-radius: 999px;
+      transition: width 0.35s ease;
+    }
+
+    .topic-badge {
+      align-self: flex-start;
+      background: #eef2ff;
+      color: #4338ca;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 999px;
+    }
+
+    .question-text {
+      font-size: 20px;
+      line-height: 1.35;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .option-btn {
+      width: 100%;
+      min-height: 58px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 2px solid var(--option-border);
+      background: var(--option-bg);
+      color: var(--text-main);
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1.35;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: transform 0.12s ease, border-color 0.2s ease, background-color 0.2s ease;
+      touch-action: manipulation;
+    }
+
+    .option-btn:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    .option-btn:hover:not(:disabled) {
+      border-color: #a5b4fc;
+      background: #f5f7ff;
+    }
+
+    .option-letter {
+      flex-shrink: 0;
+      width: 30px;
+      height: 30px;
+      border-radius: 10px;
+      background: #e2e8f0;
+      color: #334155;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .option-btn.correct {
+      background: var(--correct-bg);
+      border-color: var(--correct-border);
+      color: var(--correct-text);
+    }
+
+    .option-btn.correct .option-letter {
+      background: var(--correct-border);
+      color: #ffffff;
+    }
+
+    .option-btn.wrong {
+      background: var(--wrong-bg);
+      border-color: var(--wrong-border);
+      color: var(--wrong-text);
+    }
+
+    .option-btn.wrong .option-letter {
+      background: var(--wrong-border);
+      color: #ffffff;
+    }
+
+    .option-btn:disabled {
+      cursor: default;
+    }
+
+    .feedback-box {
+      display: none;
+      padding: 14px 16px;
+      border-radius: 16px;
+      font-size: 15px;
+      line-height: 1.45;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .feedback-box.visible {
+      display: block;
+    }
+
+    .feedback-box.is-correct {
+      background: #ecfdf5;
+      border: 1.5px solid #6ee7b7;
+      color: #065f46;
+    }
+
+    .feedback-box.is-wrong {
+      background: #fef2f2;
+      border: 1.5px solid #fca5a5;
+      color: #991b1b;
+    }
+
+    .feedback-title {
+      font-weight: 800;
+      margin-bottom: 4px;
+      font-size: 15px;
+    }
+
+    .primary-btn {
+      width: 100%;
+      min-height: 56px;
+      border: none;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+      color: #ffffff;
+      font-size: 17px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(79, 70, 229, 0.35);
+      transition: transform 0.12s ease;
+      touch-action: manipulation;
+    }
+
+    .primary-btn:active {
+      transform: scale(0.98);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .result-screen {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 4px;
+    }
+
+    .result-emoji {
+      font-size: 64px;
+      line-height: 1;
+    }
+
+    .result-score-circle {
+      background: linear-gradient(135deg, #eef2ff, #fdf2f8);
+      border: 3px solid #c7d2fe;
+      border-radius: 24px;
+      padding: 18px 32px;
+    }
+
+    .result-score-value {
+      font-size: 40px;
+      font-weight: 900;
+      background: linear-gradient(90deg, #4f46e5, #db2777);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .result-score-label {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .result-title {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .result-desc {
+      font-size: 16px;
+      line-height: 1.45;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Баннер установки PWA -->
+  <div id="install-banner" class="install-banner hidden">
+    <span id="install-text" class="install-text">📲 Установить квиз на экран?</span>
+    <button id="install-btn" class="install-btn" type="button">Установить</button>
+  </div>
+
+  <main class="app-container">
+    <div id="quiz-screen">
+      <div class="header">
+        <div class="top-bar">
+          <span class="app-title">⚡ Квиз: Основы ИИ</span>
+          <span id="question-counter">Вопрос 1 из 10</span>
+        </div>
+        <div class="progress-track">
+          <div id="progress-fill" class="progress-fill"></div>
+        </div>
+      </div>
+
+      <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 14px;">
+        <span id="topic-badge" class="topic-badge">Тема</span>
+        <h1 id="question-text" class="question-text">Текст вопроса</h1>
+
+        <div id="options-list" class="options-list"></div>
+
+        <div id="feedback-box" class="feedback-box">
+          <div id="feedback-title" class="feedback-title"></div>
+          <div id="feedback-text"></div>
+        </div>
+
+        <button id="next-btn" class="primary-btn hidden">Следующий вопрос →</button>
+      </div>
+    </div>
+
+    <div id="result-screen" class="result-screen hidden">
+      <div id="result-emoji" class="result-emoji">🎓</div>
+      <div class="result-score-circle">
+        <div id="result-score" class="result-score-value">0 / 10</div>
+        <div class="result-score-label">Итоговый счёт</div>
+      </div>
+      <h2 id="result-title" class="result-title">Отличный результат!</h2>
+      <p id="result-desc" class="result-desc"></p>
+      <button id="restart-btn" class="primary-btn">🔄 Пройти заново</button>
+    </div>
+  </main>
+
+  <script>
+    const questions = [
+      {
+        topic: "🧠 Нейросети",
+        question: "Что является базовым элементом искусственной нейронной сети?",
+        options: [
+          "Искусственный нейрон",
+          "Реляционная таблица",
+          "HTML-тег",
+          "Виртуальная машина"
+        ],
+        correctIndex: 0,
+        explanation: "Искусственный нейрон принимает входные сигналы, умножает их на веса, суммирует и передаёт результат дальше через функцию активации."
+      },
+      {
+        topic: "✍️ Промпты",
+        question: "Что такое «промпт» (prompt) при работе с генеративным ИИ?",
+        options: [
+          "Ошибка в программном коде модели",
+          "Текстовый запрос или инструкция для нейросети",
+          "Скорость ответа сервера в миллисекундах",
+          "Скрытый пароль администратора"
+        ],
+        correctIndex: 1,
+        explanation: "Промпт — это формулировка задачи, вопроса или инструкции, по которой модель понимает, что именно нужно сгенерировать."
+      },
+      {
+        topic: "💬 Чат-боты",
+        question: "Какой класс моделей лежит в основе современных умных чат-ботов (например, ChatGPT)?",
+        options: [
+          "Антивирусные сканеры",
+          "Большие языковые модели (LLM)",
+          "Графические движки 3D-игр",
+          "Архиваторы данных"
+        ],
+        correctIndex: 1,
+        explanation: "LLM (Large Language Models) обучаются на огромных массивах текста, чтобы предсказывать продолжение фраз и вести осмысленный диалог."
+      },
+      {
+        topic: "✍️ Промпты",
+        question: "Зачем в промпте задавать модели роль (например: «Ты — преподаватель математики»)?",
+        options: [
+          "Чтобы отключить интернет-соединение",
+          "Чтобы задать нужный стиль, тон и глубину ответа",
+          "Чтобы ускорить зарядку телефона",
+          "Чтобы уменьшить размер экрана"
+        ],
+        correctIndex: 1,
+        explanation: "Назначение роли (Role Prompting) сужает контекст: модель выбирает лексику, структуру и уровень объяснения под нужную аудиторию."
+      },
+      {
+        topic: "🧠 Нейросети",
+        question: "Как называется процесс, во время которого нейросеть подбирает веса связей на примерах?",
+        options: [
+          "Обучение (тренировка) модели",
+          "Дефрагментация диска",
+          "Компиляция браузера",
+          "Сжатие изображений"
+        ],
+        correctIndex: 0,
+        explanation: "Во время обучения сеть сравнивает свой ответ с правильным и корректирует веса (часто методом обратного распространения ошибки)."
+      },
+      {
+        topic: "💬 Чат-боты",
+        question: "Что такое «галлюцинация» чат-бота?",
+        options: [
+          "Зависание интерфейса при открытии",
+          "Уверенная генерация выдуманных или неверных фактов",
+          "Автоматический перевод текста на другой язык",
+          "Отображение тёмной темы оформления"
+        ],
+        correctIndex: 1,
+        explanation: "Модель предсказывает наиболее вероятные слова, а не проверяет истинность, поэтому иногда может убедительно сочинять несуществующие факты."
+      },
+      {
+        topic: "✍️ Промпты",
+        question: "Как называется приём, когда в промпт добавляют 2–3 готовых примера нужного результата?",
+        options: [
+          "Zero-shot prompting",
+          "Few-shot prompting",
+          "Hard reset",
+          "Overclocking"
+        ],
+        correctIndex: 1,
+        explanation: "Few-shot prompting («обучение на нескольких примерах») помогает модели точнее уловить формат ответа без дополнительного обучения."
+      },
+      {
+        topic: "💬 Чат-боты",
+        question: "Что такое «токен» для текстового чат-бота?",
+        options: [
+          "Секретный ключ, которым измеряют заряд батареи",
+          "Единица текста (слово, часть слова или знак), которую обрабатывает модель",
+          "Картинка-аватар пользователя в чате",
+          "Вредоносный скрипт в браузере"
+        ],
+        correctIndex: 1,
+        explanation: "Языковые модели разбивают текст на токены. От их количества зависят объём контекстного окна и стоимость запроса."
+      },
+      {
+        topic: "🧠 Нейросети",
+        question: "Что происходит при «переобучении» (overfitting) нейросети?",
+        options: [
+          "Модель идеально запоминает учебные примеры, но ошибается на новых данных",
+          "Модель начинает работать в два раза быстрее",
+          "Модель сама удаляет лишние файлы с компьютера",
+          "Модель забывает весь алфавит"
+        ],
+        correctIndex: 0,
+        explanation: "При переобучении сеть вместо общих закономерностей зазубривает шум и детали обучающей выборки, теряя способность обобщать."
+      },
+      {
+        topic: "✍️ Промпты",
+        question: "Какой подход помогает модели лучше справляться со сложной логической задачей?",
+        options: [
+          "Писать весь запрос заглавными буквами",
+          "Попросить модель рассуждать по шагам (Chain-of-Thought)",
+          "Убрать из запроса все знаки препинания",
+          "Задать вопрос одним смайликом"
+        ],
+        correctIndex: 1,
+        explanation: "Техника Chain-of-Thought («цепочка рассуждений») заставляет модель выводить промежуточные шаги, что заметно снижает количество ошибок."
+      }
+    ];
+
+    const letters = ["А", "Б", "В", "Г"];
+    let currentIndex = 0;
+    let score = 0;
+    let answered = false;
+
+    const quizScreen = document.getElementById("quiz-screen");
+    const resultScreen = document.getElementById("result-screen");
+    const questionCounter = document.getElementById("question-counter");
+    const progressFill = document.getElementById("progress-fill");
+    const topicBadge = document.getElementById("topic-badge");
+    const questionText = document.getElementById("question-text");
+    const optionsList = document.getElementById("options-list");
+    const feedbackBox = document.getElementById("feedback-box");
+    const feedbackTitle = document.getElementById("feedback-title");
+    const feedbackText = document.getElementById("feedback-text");
+    const nextBtn = document.getElementById("next-btn");
+    const resultEmoji = document.getElementById("result-emoji");
+    const resultScore = document.getElementById("result-score");
+    const resultTitle = document.getElementById("result-title");
+    const resultDesc = document.getElementById("result-desc");
+    const restartBtn = document.getElementById("restart-btn");
+
+    function renderQuestion() {
+      answered = false;
+      const q = questions[currentIndex];
+
+      questionCounter.textContent = `Вопрос ${currentIndex + 1} из ${questions.length}`;
+      progressFill.style.width = `${((currentIndex + 1) / questions.length) * 100}%`;
+
+      topicBadge.textContent = q.topic;
+      questionText.textContent = q.question;
+
+      feedbackBox.className = "feedback-box";
+      nextBtn.classList.add("hidden");
+      nextBtn.textContent = currentIndex === questions.length - 1
+        ? "Узнать результат →"
+        : "Следующий вопрос →";
+
+      optionsList.innerHTML = "";
+
+      q.options.forEach((optionText, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "option-btn";
+        btn.type = "button";
+        btn.innerHTML = `
+          <span class="option-letter">${letters[idx]}</span>
+          <span>${optionText}</span>
+        `;
+        btn.addEventListener("click", () => handleAnswer(idx));
+        optionsList.appendChild(btn);
+      });
+    }
+
+    function handleAnswer(selectedIdx) {
+      if (answered) return;
+      answered = true;
+
+      const q = questions[currentIndex];
+      const buttons = optionsList.querySelectorAll(".option-btn");
+
+      buttons.forEach((btn, idx) => {
+        btn.disabled = true;
+        if (idx === q.correctIndex) {
+          btn.classList.add("correct");
+        }
+      });
+
+      if (selectedIdx === q.correctIndex) {
+        score++;
+        feedbackBox.className = "feedback-box visible is-correct";
+        feedbackTitle.textContent = "✅ Верно!";
+      } else {
+        buttons[selectedIdx].classList.add("wrong");
+        feedbackBox.className = "feedback-box visible is-wrong";
+        feedbackTitle.textContent = "❌ Неверно";
+      }
+
+      feedbackText.textContent = q.explanation;
+      nextBtn.classList.remove("hidden");
+    }
+
+    function showResults() {
+      quizScreen.classList.add("hidden");
+      resultScreen.classList.remove("hidden");
+
+      resultScore.textContent = `${score} / ${questions.length}`;
+
+      if (score >= 9) {
+        resultEmoji.textContent = "🏆";
+        resultTitle.textContent = "Блестяще!";
+        resultDesc.textContent = "Вы отлично разбираетесь в нейросетях, промптах и работе чат-ботов. К зачёту или экзамену готовы на 100%!";
+      } else if (score >= 6) {
+        resultEmoji.textContent = "🚀";
+        resultTitle.textContent = "Хороший результат!";
+        resultDesc.textContent = "Базовые темы усвоены уверенно. Пройдите квиз ещё раз, чтобы закрепить оставшиеся детали.";
+      } else {
+        resultEmoji.textContent = "📚";
+        resultTitle.textContent = "Есть куда расти!";
+        resultDesc.textContent = "Хороший повод освежить конспекты по ИИ и попробовать пройти тест снова — с каждым разом будет легче!";
+      }
+    }
+
+    nextBtn.addEventListener("click", () => {
+      currentIndex++;
+      if (currentIndex < questions.length) {
+        renderQuestion();
+      } else {
+        showResults();
+      }
+    });
+
+    restartBtn.addEventListener("click", () => {
+      currentIndex = 0;
+      score = 0;
+      resultScreen.classList.add("hidden");
+      quizScreen.classList.remove("hidden");
+      renderQuestion();
+    });
+
+    renderQuestion();
+
+    // --- Логика PWA ---
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch((err) => {
+          console.error("Ошибка регистрации Service Worker:", err);
+        });
+      });
+    }
+
+    let deferredPrompt;
+    const installBanner = document.getElementById("install-banner");
+    const installBtn = document.getElementById("install-btn");
+
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBanner.classList.remove("hidden");
+    });
+
+    // Там, где системного окна установки нет: встроенный браузер Telegram и iOS
+    const installText = document.getElementById("install-text");
+    const isStandalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    const inTelegram = "TelegramWebview" in window || "TelegramWebviewProxy" in window;
+
+    if (!isStandalone && inTelegram) {
+      // Встроенный браузер не умеет ставить приложения — уводим в Chrome / Safari
+      installText.textContent = "📲 Чтобы установить, откройте в браузере";
+      installBtn.textContent = "Открыть";
+      installBanner.classList.remove("hidden");
+    } else if (!isStandalone && isIOS) {
+      installText.textContent = "📲 Установка: «Поделиться» → «На экран Домой»";
+      installBtn.classList.add("hidden");
+      installBanner.classList.remove("hidden");
+    }
+
+    installBtn.addEventListener("click", async () => {
+      if (inTelegram) {
+        const url = location.host + location.pathname + location.search;
+        location.href = isIOS
+          ? "x-safari-https://" + url
+          : "intent://" + url + "#Intent;scheme=https;package=com.android.chrome;end";
+        return;
+      }
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      installBanner.classList.add("hidden");
+    });
+
+    window.addEventListener("appinstalled", () => {
+      installBanner.classList.add("hidden");
+      deferredPrompt = null;
+    });
+  </script>
+</body>
+</html>

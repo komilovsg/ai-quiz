@@ -1,0 +1,32 @@
+{
+  "name": "Квиз: Основы ИИ",
+  "short_name": "Основы ИИ",
+  "description": "Мини-приложение для студентов: 10 вопросов о нейросетях, промптах и чат-ботах.",
+  "lang": "ru",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#6366f1",
+  "theme_color": "#4f46e5",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
