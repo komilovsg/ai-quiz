@@ -625,10 +625,11 @@
       resultScore.textContent = `${score} / ${questions.length}`;
 
       queueResult({
+        date: new Date().toLocaleString("ru-RU"),
         name: nameInput.value.trim(),
         group: groupInput.value.trim(),
         score: score,
-        percent: Math.round((score / questions.length) * 100) + "%"
+        percentage: Math.round((score / questions.length) * 100) + "%"
       });
 
       if (score >= 9) {
